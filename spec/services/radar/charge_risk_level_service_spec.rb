@@ -76,7 +76,7 @@ describe Radar::ChargeRiskLevelService do
 
   describe ".fetch_bulk" do
     let(:purchase) { create_test_purchase }
-    let(:purchase2) { p = create_test_purchase; p.update_column(:stripe_transaction_id, "ch_unique_#{p.id}"); p }
+    let(:purchase2) { new_purchase = create_test_purchase; new_purchase.update_column(:stripe_transaction_id, "ch_unique_#{new_purchase.id}"); new_purchase }
 
     it "bulk fetches risk levels and skips non-Stripe purchases" do
       non_stripe = create_test_purchase
@@ -104,6 +104,17 @@ describe Radar::ChargeRiskLevelService do
       expect(results[purchase.id]).to be_nil
 
       # Second bulk fetch — should use cache, not re-fetch
+      results = described_class.fetch_bulk([purchase])
+      expect(results[purchase.id]).to be_nil
+    end
+
+    it "caches nil results when charge outcome is nil and does not re-fetch from Stripe" do
+      charge = Stripe::Charge.construct_from(outcome: nil)
+      expect(Stripe::Charge).to receive(:retrieve).with(purchase.stripe_transaction_id).once.and_return(charge)
+
+      results = described_class.fetch_bulk([purchase])
+      expect(results[purchase.id]).to be_nil
+
       results = described_class.fetch_bulk([purchase])
       expect(results[purchase.id]).to be_nil
     end
