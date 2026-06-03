@@ -52,6 +52,141 @@ module CurrencyHelper
     end
   end
 
+  def buyer_currency_for_ip(ip)
+    buyer_currency_for_country(GeoIp.lookup(ip)&.country_code)
+  rescue StandardError
+    nil
+  end
+
+  def buyer_currency_for_country(country_code)
+    return if country_code.blank?
+
+    currency = ISO3166::Country.new(country_code.to_s.upcase)&.currency_code&.downcase
+    # Only localize into currencies we support for both display and input (currencies.json);
+    # buyers in other countries fall back to the seller's set price.
+    currency if currency && CURRENCY_CHOICES.key?(currency)
+  end
+
+  def buyer_local_price_cents(price_cents:, from_currency:, to_currency:, rate: nil)
+    return price_cents if from_currency.to_s.casecmp?(to_currency.to_s)
+
+    rate ||= buyer_local_currency_rate(from_currency:, to_currency:)
+    return if rate.blank?
+
+    from_subunit_to_unit = subunit_to_unit(from_currency)
+    to_subunit_to_unit = subunit_to_unit(to_currency)
+    ((BigDecimal(price_cents.to_s) / from_subunit_to_unit) * rate * to_subunit_to_unit).round
+  rescue StandardError
+    nil
+  end
+
+  # Cross rate between two currencies, derived from the USD-based rates kept warm hourly
+  # by UpdateCurrenciesWorker. Both rates are quoted against USD, so the cross rate is
+  # to_rate / from_rate. Reads the cache directly and never makes a synchronous HTTP call
+  # on the render path: a missing rate degrades gracefully (the seller's set price is shown).
+  def buyer_local_currency_rate(from_currency:, to_currency:)
+    from_currency = from_currency.to_s.downcase
+    to_currency = to_currency.to_s.downcase
+    return BigDecimal("1") if from_currency == to_currency
+
+    from_rate = cached_usd_rate(from_currency)
+    to_rate = cached_usd_rate(to_currency)
+    return if from_rate.nil? || to_rate.nil?
+
+    to_rate / from_rate
+  end
+
+  def buyer_currency_display_props(product:, price_cents:, ip:)
+    product_currency = product.price_currency_type.to_s.downcase
+    creator_opted_in = product.user.show_buyer_local_currency? &&
+      Feature.active?(:buyer_local_currency, product.user)
+
+    default_props = {
+      product_id: product.external_id,
+      creator_opted_in:,
+      buyer_currency_shown: product_currency,
+      product_currency:,
+      buyer_local_price_cents: nil,
+      rate: nil,
+      variant: "default",
+    }
+
+    return default_props unless creator_opted_in
+
+    buyer_currency = buyer_currency_for_ip(ip)
+    return default_props unless buyer_currency.present? && buyer_currency != product_currency
+
+    rate = buyer_local_currency_rate(from_currency: product_currency, to_currency: buyer_currency)
+    return default_props if rate.blank?
+
+    local_price_cents = buyer_local_price_cents(
+      price_cents:,
+      from_currency: product_currency,
+      to_currency: buyer_currency,
+      rate:
+    )
+    return default_props if local_price_cents.blank?
+
+    {
+      product_id: product.external_id,
+      creator_opted_in:,
+      buyer_currency_shown: buyer_currency,
+      product_currency:,
+      buyer_local_price_cents: local_price_cents,
+      rate: rate.to_f,
+      variant: "buyer_local",
+    }
+  rescue StandardError
+    # Graceful degradation: never re-raise. Re-deriving product_currency here could raise
+    # again (the original failure may have been in price_currency_type / product.user), so we
+    # guard it independently and fall back to "usd" only as a last resort. Both
+    # buyer_currency_shown and product_currency MUST be non-nil strings — the TS
+    # BuyerCurrencyDisplay type declares them non-nullable, and a nil here makes typia.assert
+    # throw on the checkout path, breaking checkout for that buyer.
+    safe_product_currency = begin
+      product.price_currency_type.to_s.downcase.presence || Currency::USD
+    rescue StandardError
+      Currency::USD
+    end
+    {
+      product_id: product.external_id,
+      creator_opted_in: false,
+      buyer_currency_shown: safe_product_currency,
+      product_currency: safe_product_currency,
+      buyer_local_price_cents: nil,
+      rate: nil,
+      variant: "default",
+    }
+  end
+
+  def buyer_local_price_props(product:, original_price_cents: nil, buyer_currency_display:)
+    return {} unless buyer_currency_display&.dig(:variant) == "buyer_local"
+
+    buyer_currency = buyer_currency_display[:buyer_currency_shown]
+    rate = BigDecimal(buyer_currency_display[:rate].to_s)
+    minor_unit_rate = rate *
+      BigDecimal(subunit_to_unit(buyer_currency).to_s) /
+      BigDecimal(subunit_to_unit(product.price_currency_type).to_s)
+    props = {
+      buyer_currency:,
+      buyer_local_currency_rate: minor_unit_rate.to_f,
+      buyer_local_currency_subunit_to_unit: subunit_to_unit(buyer_currency),
+      buyer_local_price_cents: buyer_currency_display[:buyer_local_price_cents],
+    }
+
+    if original_price_cents.present?
+      local_original_price_cents = buyer_local_price_cents(
+        price_cents: original_price_cents,
+        from_currency: product.price_currency_type,
+        to_currency: buyer_currency,
+        rate:
+      )
+      props[:buyer_local_original_price_cents] = local_original_price_cents if local_original_price_cents.present?
+    end
+
+    props
+  end
+
   def get_usd_cents(currency_type, quantity, rate: nil)
     return quantity if currency_type.to_s == "usd" # Getting around an open exchange jankiness
     rate = get_rate(currency_type) if rate.nil?
@@ -146,5 +281,22 @@ module CurrencyHelper
     return base_formatted_label if duration_in_months.blank?
 
     "#{base_formatted_label} x #{(duration_in_months / number_of_months).round}"
+  end
+
+  # USD-based rate for a single currency, read from the hourly cache only (no inline OXR
+  # fetch), so it is safe to call on the render path. Returns nil when the rate is absent
+  # or non-positive.
+  def cached_usd_rate(currency_type)
+    return BigDecimal("1") if currency_type.to_s.casecmp?(Currency::USD)
+
+    cached = currency_namespace.get(currency_type.to_s.upcase)
+    return if cached.blank?
+
+    rate = cached.to_d
+    rate if rate.positive?
+  end
+
+  def subunit_to_unit(currency_type)
+    Money::Currency.new(currency_type.to_s.downcase).subunit_to_unit
   end
 end

@@ -314,6 +314,7 @@ class CheckoutPresenter
         } : nil,
         currency_code: product.price_currency_type.downcase,
         price_cents: product.price_cents,
+        buyer_currency_display: buyer_currency_display_props(product:, price_cents: product.price_cents, ip:),
         supports_paypal: supports_paypal(product),
         custom_fields: product.custom_field_descriptors,
         exchange_rate: get_rate(product.price_currency_type).to_f / (is_currency_type_single_unit?(product.price_currency_type) ? 100 : 1),

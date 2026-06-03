@@ -1,4 +1,4 @@
-import { CurrencyCode, formatPriceCentsWithCurrencySymbol } from "$app/utils/currency";
+import { BuyerLocalCurrencyContext, formatBuyerLocalOrSetPrice } from "$app/utils/currency";
 
 export function formatPrice(
   currencySymbol: string,
@@ -103,11 +103,11 @@ export function calculateFirstInstallmentPaymentPriceCents(priceCents: number, n
 
 export const formatInstallmentPaymentSchedule = (
   priceCents: number,
-  currencyCode: CurrencyCode,
+  buyerLocalContext: BuyerLocalCurrencyContext,
   numberOfInstallments: number,
 ) => {
   const baseInstallmentAmount = Math.floor(priceCents / numberOfInstallments);
-  const baseInstallmentAmountFormatted = formatPriceCentsWithCurrencySymbol(currencyCode, baseInstallmentAmount, {
+  const baseInstallmentAmountFormatted = formatBuyerLocalOrSetPrice(baseInstallmentAmount, buyerLocalContext, {
     symbolFormat: "short",
   });
 
@@ -116,7 +116,7 @@ export const formatInstallmentPaymentSchedule = (
   }
 
   const firstInstallmentAmount = baseInstallmentAmount + (priceCents % numberOfInstallments);
-  const firstInstallmentAmountFormatted = formatPriceCentsWithCurrencySymbol(currencyCode, firstInstallmentAmount, {
+  const firstInstallmentAmountFormatted = formatBuyerLocalOrSetPrice(firstInstallmentAmount, buyerLocalContext, {
     symbolFormat: "short",
   });
 

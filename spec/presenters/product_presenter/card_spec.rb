@@ -5,7 +5,7 @@ require "spec_helper"
 describe ProductPresenter::Card do
   include Rails.application.routes.url_helpers
 
-  let(:request) { instance_double(ActionDispatch::Request, host: "test.gumroad.com", host_with_port: "test.gumroad.com:1234", protocol: "http") }
+  let(:request) { instance_double(ActionDispatch::Request, host: "test.gumroad.com", host_with_port: "test.gumroad.com:1234", protocol: "http", remote_ip: "0.0.0.0") }
   let(:creator) { create(:user, name: "Testy", username: "testy") }
   let(:product) { create(:product, unique_permalink: "test", name: "hello", user: creator) }
 
@@ -30,6 +30,15 @@ describe ProductPresenter::Card do
             ratings: { count: 0, average: 0 },
             currency_code: Currency::USD,
             price_cents: 100,
+            buyer_currency_display: {
+              product_id: product.external_id,
+              creator_opted_in: false,
+              buyer_currency_shown: "usd",
+              product_currency: "usd",
+              buyer_local_price_cents: nil,
+              rate: nil,
+              variant: "default"
+            },
             thumbnail_url: nil,
             native_type: Link::NATIVE_TYPE_DIGITAL,
             is_pay_what_you_want: false,
@@ -162,7 +171,7 @@ describe ProductPresenter::Card do
         per_row_patterns.each do |pattern, label|
           hits = queries.grep(pattern)
           expect(hits).to be_empty,
-            "Expected no per-row #{label} queries, got #{hits.size}:\n#{hits.join("\n")}"
+                          "Expected no per-row #{label} queries, got #{hits.size}:\n#{hits.join("\n")}"
         end
       end
 
@@ -202,7 +211,7 @@ describe ProductPresenter::Card do
         per_row_patterns.each do |pattern, label|
           hits = queries.grep(pattern)
           expect(hits).to be_empty,
-            "Expected no per-row #{label} queries, got #{hits.size}:\n#{hits.join("\n")}"
+                          "Expected no per-row #{label} queries, got #{hits.size}:\n#{hits.join("\n")}"
         end
       end
     end

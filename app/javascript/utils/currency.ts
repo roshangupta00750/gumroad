@@ -101,3 +101,54 @@ export const formatPriceCentsWithoutCurrencySymbolAndComma = (code: CurrencyCode
     useGrouping: false,
   });
 };
+
+export const formatMinorUnitPriceWithIntl = (
+  currencyCode: string,
+  amountMinorUnits: number,
+  subunitToUnit?: number | null,
+): string => {
+  const currency = currencyCode.toUpperCase();
+  const formatter = new Intl.NumberFormat("en-US", { style: "currency", currency });
+  // Prefer the backend's authoritative subunit_to_unit (the Money gem's value, which is
+  // the single source of truth and is non-ISO for some currencies, e.g. KRW/HUF/IDR use
+  // 100). Only fall back to the currencies.json heuristic when the caller didn't pass it.
+  const resolvedSubunitToUnit =
+    subunitToUnit != null && subunitToUnit > 0
+      ? subunitToUnit
+      : (() => {
+          const configuredCurrency = Object.entries(currenciesMap).find(
+            ([code]) => code === currencyCode.toLowerCase(),
+          )?.[1];
+          return configuredCurrency && "single_unit" in configuredCurrency && configuredCurrency.single_unit ? 1 : 100;
+        })();
+  return formatter.format(amountMinorUnits / resolvedSubunitToUnit);
+};
+
+export type BuyerLocalCurrencyContext = {
+  currencyCode: CurrencyCode;
+  buyerCurrency?: string | null | undefined;
+  buyerLocalCurrencyRate?: number | null | undefined;
+  buyerLocalCurrencySubunitToUnit?: number | null | undefined;
+};
+
+// Formats a price for product-page display: the buyer's approximate local currency when the
+// seller has opted in and a rate is available, otherwise the seller's set currency. The rate
+// is a minor-unit rate (set-currency cents -> buyer-currency minor units), so it applies to
+// any amount denominated in the product's currency. Use only for visible browsing prices —
+// never for amounts the buyer enters/pays or for schema.org microdata, which stay set-currency.
+// TODO(#5281): visible price is buyer-local but schema.org microdata stays set-currency — revisit
+// whether to localize microdata (consistency) or keep set-currency (real charged price).
+export const formatBuyerLocalOrSetPrice = (
+  amountCents: number,
+  { currencyCode, buyerCurrency, buyerLocalCurrencyRate, buyerLocalCurrencySubunitToUnit }: BuyerLocalCurrencyContext,
+  {
+    symbolFormat = "long",
+    fallbackLocalCents,
+  }: { symbolFormat?: "long" | "short"; fallbackLocalCents?: number | null } = {},
+): string => {
+  const localCents =
+    buyerLocalCurrencyRate != null ? Math.round(amountCents * buyerLocalCurrencyRate) : fallbackLocalCents;
+  return buyerCurrency != null && localCents != null
+    ? formatMinorUnitPriceWithIntl(buyerCurrency, localCents, buyerLocalCurrencySubunitToUnit ?? undefined)
+    : formatPriceCentsWithCurrencySymbol(currencyCode, amountCents, { symbolFormat });
+};

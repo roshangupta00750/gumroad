@@ -1,6 +1,12 @@
 import type { LineItemResult } from "$app/data/purchase";
 import { Discount } from "$app/parsers/checkout";
-import { AnalyticsData, CustomFieldDescriptor, FreeTrial, ProductNativeType } from "$app/parsers/product";
+import {
+  AnalyticsData,
+  BuyerCurrencyDisplay,
+  CustomFieldDescriptor,
+  FreeTrial,
+  ProductNativeType,
+} from "$app/parsers/product";
 import { CurrencyCode } from "$app/utils/currency";
 import { applyOfferCodeToCents } from "$app/utils/offer-code";
 import { RecurrenceId } from "$app/utils/recurringPricing";
@@ -24,6 +30,7 @@ export type Product = {
   thumbnail_url: string | null;
   currency_code: CurrencyCode;
   price_cents: number;
+  buyer_currency_display?: BuyerCurrencyDisplay;
   quantity_remaining: number | null;
   pwyw: { suggested_price_cents: number | null } | null;
   installment_plan: { number_of_installments: number } | null;

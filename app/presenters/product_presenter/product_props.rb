@@ -3,6 +3,7 @@
 class ProductPresenter::ProductProps
   include Rails.application.routes.url_helpers
   include ProductsHelper
+  include CurrencyHelper
 
   SALES_COUNT_CACHE_KEY_REFIX = "product-presenter:sales-count-cache"
   SALES_COUNT_CACHE_METRICS_KEY = "#{SALES_COUNT_CACHE_KEY_REFIX}-metrics"
@@ -13,6 +14,12 @@ class ProductPresenter::ProductProps
   end
 
   def props(seller_custom_domain_url:, request:, pundit_user:, recommended_by: nil, discount_code: nil, quantity: 1, layout: nil)
+    discount_code_result = discount_code_props(discount_code, quantity, pundit_user&.user)
+    ppp_details = product.ppp_details(request.remote_ip)
+    displayed_price_cents = displayed_price_cents(discount_code_result:, ppp_details:, quantity:)
+    original_price_cents = product.price_cents if displayed_price_cents.present? && displayed_price_cents < product.price_cents
+    buyer_currency_display = buyer_currency_display_props(product:, price_cents: displayed_price_cents, ip: request.remote_ip)
+
     {
       product: {
         id: product.external_id,
@@ -38,6 +45,8 @@ class ProductPresenter::ProductProps
         description_html: product.html_safe_description,
         currency_code: product.price_currency_type.downcase,
         price_cents: product.price_cents,
+        buyer_currency_display:,
+        **buyer_local_price_props(product:, original_price_cents:, buyer_currency_display:),
         rental_price_cents: product.rental_price_cents,
         pwyw: product.customizable_price ? { suggested_price_cents: product.suggested_price_cents } : nil,
         **ProductPresenter::InstallmentPlanProps.new(product:).props,
@@ -63,14 +72,14 @@ class ProductPresenter::ProductProps
         options: product.options,
         analytics: product.analytics_data,
         has_third_party_analytics: product.has_third_party_analytics?("product"),
-        ppp_details: product.ppp_details(request.remote_ip),
+        ppp_details:,
         can_edit: pundit_user&.user ? Pundit.policy!(pundit_user, product).edit? : false,
         refund_policy: refund_policy_props,
         bundle_products: product.bundle_products.in_order.includes(:variant, product: ProductPresenter::ASSOCIATIONS_FOR_CARD).alive.map { bundle_product_props(_1, request:, recommended_by:, layout:) },
         public_files: product.alive_public_files.attached.map { PublicFilePresenter.new(public_file: _1).props },
         audio_previews_enabled: Feature.active?(:audio_previews, product.user),
       },
-      discount_code: discount_code_props(discount_code, quantity, pundit_user&.user),
+      discount_code: discount_code_result,
       purchase: purchase_props(product.purchase_info_for_product_page(pundit_user&.user, request.cookie_jar[:_gumroad_guid])),
       wishlists: pundit_user&.seller.present? ? (
         pundit_user.seller.wishlists.alive.includes(:alive_wishlist_products).map { |wishlist| WishlistPresenter.new(wishlist:).listing_props(product:) }
@@ -143,6 +152,36 @@ class ProductPresenter::ProductProps
         quantity: bundle_product.quantity,
         variant: bundle_product.variant&.name,
       }
+    end
+
+    def displayed_price_cents(discount_code_result:, ppp_details:, quantity:)
+      return if product.price_cents.nil?
+
+      price_cents = discounted_price_cents(product.price_cents, discount_code_result, quantity)
+      ppp_price_cents = ppp_price_cents(product.price_cents, ppp_details)
+      ppp_price_cents.present? && ppp_price_cents < price_cents ? ppp_price_cents : price_cents
+    end
+
+    def discounted_price_cents(price_cents, discount_code_result, quantity)
+      return price_cents unless discount_code_result&.dig(:valid)
+
+      discount = discount_code_result[:discount]
+      return price_cents if quantity.to_i < discount[:minimum_quantity].to_i
+
+      if discount[:type] == "fixed"
+        [price_cents - discount[:cents], 0].max
+      else
+        price_cents - (price_cents * (discount[:percents] / 100.0)).round
+      end
+    end
+
+    def ppp_price_cents(price_cents, ppp_details)
+      return if ppp_details.blank? || price_cents.zero?
+
+      [
+        (ppp_details[:factor] * price_cents).round,
+        ppp_details[:minimum_price]
+      ].max
     end
 
     def refund_policy_props

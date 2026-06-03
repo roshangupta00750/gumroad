@@ -78,7 +78,6 @@ export const CrossSellModal = ({
                   isPayWhatYouWant={product.is_tiered_membership ? !!option?.is_pwyw : !!product.pwyw}
                   isSalesLimited={false}
                   creatorName={product.creator.name}
-                  tooltipPosition="top"
                 />
               </div>
             </ProductCardFooter>

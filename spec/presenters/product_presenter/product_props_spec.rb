@@ -51,6 +51,15 @@ describe ProductPresenter::ProductProps do
               **ProductPresenter::InstallmentPlanProps.new(product:).props,
               covers: [product.asset_previews.first.as_json],
               currency_code: Currency::USD,
+              buyer_currency_display: {
+                product_id: product.external_id,
+                creator_opted_in: false,
+                buyer_currency_shown: "usd",
+                product_currency: "usd",
+                buyer_local_price_cents: nil,
+                rate: nil,
+                variant: "default"
+              },
               custom_view_content_button_text: nil,
               custom_button_text_option: nil,
               description_html: "This is a collection of works spanning 1984 — 1994, while I spent time in a shack in the Andes.",
@@ -284,6 +293,15 @@ describe ProductPresenter::ProductProps do
               **ProductPresenter::InstallmentPlanProps.new(product:).props,
               covers: [],
               currency_code: Currency::USD,
+              buyer_currency_display: {
+                product_id: product.external_id,
+                creator_opted_in: false,
+                buyer_currency_shown: "usd",
+                product_currency: "usd",
+                buyer_local_price_cents: nil,
+                rate: nil,
+                variant: "default"
+              },
               custom_view_content_button_text: nil,
               custom_button_text_option: nil,
               description_html: "This is a collection of works spanning 1984 — 1994, while I spent time in a shack in the Andes.",

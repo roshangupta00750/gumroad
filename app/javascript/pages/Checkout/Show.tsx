@@ -532,6 +532,7 @@ const CheckoutIndexPage = () => {
             valueIsSingleUnit: getIsSingleUnitCurrency(typia.assert<CurrencyCode>(result.currency_type)),
             quantity: result.quantity,
             tax: result.non_formatted_seller_tax_amount,
+            buyer_currency_display: item.product.buyer_currency_display,
           });
         }
         if (result.has_third_party_analytics && !redirectTo)

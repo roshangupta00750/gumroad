@@ -145,6 +145,15 @@ describe CheckoutPresenter do
             is_quantity_enabled: false,
             is_tiered_membership: false,
             price_cents: 100,
+            buyer_currency_display: {
+              product_id: product.external_id,
+              creator_opted_in: false,
+              buyer_currency_shown: "usd",
+              product_currency: "usd",
+              buyer_local_price_cents: nil,
+              rate: nil,
+              variant: "default"
+            },
             pwyw: nil,
             installment_plan: nil,
             recurrences: nil,
@@ -659,6 +668,15 @@ describe CheckoutPresenter do
                                  }],
                                  pwyw: nil,
                                  price_cents: 0,
+                                 buyer_currency_display: {
+                                   product_id: @product.external_id,
+                                   creator_opted_in: false,
+                                   buyer_currency_shown: "usd",
+                                   product_currency: "usd",
+                                   buyer_local_price_cents: nil,
+                                   rate: nil,
+                                   variant: "default"
+                                 },
                                  installment_plan: nil,
                                  is_tiered_membership: true,
                                  is_legacy_subscription: false,

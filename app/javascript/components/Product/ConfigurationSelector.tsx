@@ -19,8 +19,10 @@ import { CallAvailability, getRemainingCallAvailabilities } from "$app/data/call
 import { Discount } from "$app/parsers/checkout";
 import { ProductNativeType } from "$app/parsers/product";
 import {
+  BuyerLocalCurrencyContext,
   CurrencyCode,
-  formatPriceCentsWithCurrencySymbol,
+  currencyCodeList,
+  formatBuyerLocalOrSetPrice,
   formatPriceCentsWithoutCurrencySymbol,
   formatPriceCentsWithoutCurrencySymbolAndComma,
   getMinPriceCents,
@@ -55,9 +57,36 @@ const PWYWInput = React.forwardRef<
     suggestedPriceCents: number | null;
     hasError: boolean;
     hideLabel?: boolean;
+    buyerLocal?: { currencyCode: CurrencyCode; rate: number } | null;
   }
->(({ currencyCode, cents, onChange, suggestedPriceCents, hasError, onBlur, hideLabel }, ref) => {
+>(({ currencyCode, cents, onChange, suggestedPriceCents, hasError, onBlur, hideLabel, buyerLocal }, ref) => {
   const uid = React.useId();
+
+  // The buyer enters and sees their local currency, but selection.price.value (`cents`) stays in
+  // the seller's set currency — the amount actually charged — so we convert only at this boundary.
+  const inputCurrency = buyerLocal?.currencyCode ?? currencyCode;
+  const toInputCents = (setCents: number | null) =>
+    buyerLocal && setCents != null ? Math.round(setCents * buyerLocal.rate) : setCents;
+  const toSetCents = (inputCents: number | null) =>
+    buyerLocal && inputCents != null ? Math.round(inputCents / buyerLocal.rate) : inputCents;
+
+  // Track the entered value in the input currency so set<->local round-trip rounding doesn't make
+  // the field jitter while typing; resync only when the set price changes from outside this input.
+  const [inputCents, setInputCents] = React.useState<number | null>(() => toInputCents(cents));
+  const lastEmittedSetCents = React.useRef<number | null>(cents);
+  React.useEffect(() => {
+    if (cents !== lastEmittedSetCents.current) {
+      lastEmittedSetCents.current = cents;
+      setInputCents(toInputCents(cents));
+    }
+  }, [cents]);
+
+  const handleChange = (newInputCents: number | null) => {
+    setInputCents(newInputCents);
+    const setCents = toSetCents(newInputCents);
+    lastEmittedSetCents.current = setCents;
+    onChange(setCents);
+  };
 
   return (
     <Fieldset state={hasError ? "danger" : undefined}>
@@ -68,10 +97,10 @@ const PWYWInput = React.forwardRef<
       ) : null}
       <PriceInput
         id={uid}
-        currencyCode={currencyCode}
-        cents={cents}
-        onChange={onChange}
-        placeholder={`${formatPriceCentsWithoutCurrencySymbol(currencyCode, suggestedPriceCents || 0)}+`}
+        currencyCode={inputCurrency}
+        cents={inputCents}
+        onChange={handleChange}
+        placeholder={`${formatPriceCentsWithoutCurrencySymbol(inputCurrency, toInputCents(suggestedPriceCents) || 0)}+`}
         hasError={hasError}
         onBlur={() => {
           const minPriceCents = getMinPriceCents(currencyCode);
@@ -138,7 +167,17 @@ export type Product = {
   ppp_details: PurchasingPowerParityDetails | null;
   native_type: ProductNativeType;
   hide_sold_out_variants?: boolean;
+  buyer_currency?: string | null;
+  buyer_local_currency_rate?: number | null;
+  buyer_local_currency_subunit_to_unit?: number | null;
 };
+
+export const buyerLocalContextFor = (product: Product): BuyerLocalCurrencyContext => ({
+  currencyCode: product.currency_code,
+  buyerCurrency: product.buyer_currency,
+  buyerLocalCurrencyRate: product.buyer_local_currency_rate,
+  buyerLocalCurrencySubunitToUnit: product.buyer_local_currency_subunit_to_unit,
+});
 
 export const getMaxQuantity = (product: Product, option: Option | null) =>
   option?.quantity_left != null && product.quantity_remaining !== null
@@ -231,6 +270,7 @@ export const OptionRadioButton = ({
 }) => {
   priceCents ??= 0;
   const { value: discountedPriceCents } = computeDiscountedPrice(priceCents, discount, product);
+  const buyerLocalContext = buyerLocalContextFor(product);
   return (
     <Tab isSelected={selected} asChild className={recurrence ? "flex-col" : undefined}>
       <Button
@@ -253,12 +293,10 @@ export const OptionRadioButton = ({
           <Pill className="shrink-0">
             {discountedPriceCents < priceCents ? (
               <>
-                <s>{formatPriceCentsWithCurrencySymbol(currencyCode, priceCents, { symbolFormat: "long" })}</s>{" "}
+                <s>{formatBuyerLocalOrSetPrice(priceCents, buyerLocalContext)}</s>{" "}
               </>
             ) : null}
-            {formatPriceCentsWithCurrencySymbol(currencyCode, discountedPriceCents, {
-              symbolFormat: "long",
-            })}
+            {formatBuyerLocalOrSetPrice(discountedPriceCents, buyerLocalContext)}
             {isPWYW ? "+" : null}
             {recurrence ? ` ${recurrenceLabels[recurrence]}` : null}
             <div itemProp="price" className="hidden">
@@ -524,7 +562,7 @@ const PaymentOptionSelector = ({
               <p>
                 {formatInstallmentPaymentSchedule(
                   fullPriceCents,
-                  product.currency_code,
+                  buyerLocalContextFor(product),
                   product.installment_plan.number_of_installments,
                 )}
               </p>
@@ -587,6 +625,7 @@ export const ConfigurationSelector = React.forwardRef<
   React.useImperativeHandle(ref, () => ({
     focusRequiredInput: () => pwywInputRef.current?.focus(),
   }));
+  const buyerCurrencyCode = currencyCodeList.find((code) => code === product.buyer_currency) ?? null;
   const pwywInput = (
     <PWYWInput
       currencyCode={product.currency_code}
@@ -596,6 +635,11 @@ export const ConfigurationSelector = React.forwardRef<
       suggestedPriceCents={suggestedPriceCents}
       hasError={selection.price.error}
       hideLabel={product.native_type === "coffee"}
+      buyerLocal={
+        buyerCurrencyCode && product.buyer_local_currency_rate != null
+          ? { currencyCode: buyerCurrencyCode, rate: product.buyer_local_currency_rate }
+          : null
+      }
       ref={pwywInputRef}
     />
   );
@@ -626,7 +670,7 @@ export const ConfigurationSelector = React.forwardRef<
                   }
                   className="justify-center"
                 >
-                  {formatPriceCentsWithCurrencySymbol(product.currency_code, option.price_difference_cents ?? 0, {
+                  {formatBuyerLocalOrSetPrice(option.price_difference_cents ?? 0, buyerLocalContextFor(product), {
                     symbolFormat: "short",
                   })}
                 </Button>

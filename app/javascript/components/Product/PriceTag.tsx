@@ -3,12 +3,10 @@ import * as React from "react";
 import { classNames } from "$app/utils/classNames";
 import {
   CurrencyCode,
-  formatPriceCentsWithCurrencySymbol,
+  formatBuyerLocalOrSetPrice,
   formatPriceCentsWithoutCurrencySymbolAndComma,
 } from "$app/utils/currency";
 import { formatRecurrenceWithDuration, RecurrenceId } from "$app/utils/recurringPricing";
-
-import { WithTooltip } from "$app/components/WithTooltip";
 
 type Props = {
   url?: string;
@@ -24,7 +22,11 @@ type Props = {
   isPayWhatYouWant: boolean;
   isSalesLimited: boolean;
   creatorName?: string | undefined;
-  tooltipPosition?: "top" | "right";
+  buyerCurrency?: string | null | undefined;
+  buyerLocalCurrencyRate?: number | null | undefined;
+  buyerLocalCurrencySubunitToUnit?: number | null | undefined;
+  buyerLocalPriceCents?: number | null | undefined;
+  buyerLocalOriginalPriceCents?: number | null | undefined;
 };
 
 export const PriceTag = ({
@@ -36,23 +38,28 @@ export const PriceTag = ({
   isPayWhatYouWant,
   isSalesLimited,
   creatorName,
-  tooltipPosition = "right",
+  buyerCurrency,
+  buyerLocalCurrencyRate,
+  buyerLocalCurrencySubunitToUnit,
+  buyerLocalPriceCents,
+  buyerLocalOriginalPriceCents,
 }: Props) => {
-  const formattedAmount = formatPriceCentsWithCurrencySymbol(currencyCode, price, { symbolFormat: "long" });
+  const buyerLocalContext = { currencyCode, buyerCurrency, buyerLocalCurrencyRate, buyerLocalCurrencySubunitToUnit };
+  const formatDisplayPrice = (amountCents: number, fallbackLocalCents?: number | null) =>
+    formatBuyerLocalOrSetPrice(amountCents, buyerLocalContext, { fallbackLocalCents });
 
   const recurrenceLabel = recurrence
     ? formatRecurrenceWithDuration(recurrence.id, recurrence.duration_in_months)
     : null;
 
-  // Should match CurrencyHelper#product_card_formatted_price
   const priceTag = (
     <>
       {oldPrice != null ? (
         <>
-          <s>{formatPriceCentsWithCurrencySymbol(currencyCode, oldPrice, { symbolFormat: "long" })}</s>{" "}
+          <s>{formatDisplayPrice(oldPrice, buyerLocalOriginalPriceCents)}</s>{" "}
         </>
       ) : null}
-      {formattedAmount}
+      {formatDisplayPrice(price, buyerLocalPriceCents)}
       {isPayWhatYouWant ? "+" : null}
       {recurrenceLabel ? ` ${recurrenceLabel}` : null}
     </>
@@ -61,25 +68,23 @@ export const PriceTag = ({
 
   return (
     <div itemScope itemProp="offers" itemType="https://schema.org/Offer" className="flex items-center">
-      <WithTooltip position={tooltipPosition} tip={priceTag}>
-        <div className="relative grid grid-flow-col border border-r-0 border-border">
-          <div
-            className="bg-accent px-2 py-1 text-accent-foreground"
-            itemProp="price"
-            content={formatPriceCentsWithoutCurrencySymbolAndComma(currencyCode, price)}
-          >
-            {priceTag}
-          </div>
-          <div className={classNames("border-border", borderClasses)} />
-          <div className={classNames("absolute top-0 right-px bottom-0 border-accent", borderClasses)} />
+      <div className="relative grid grid-flow-col border border-r-0 border-border">
+        <div
+          className="bg-accent px-2 py-1 text-accent-foreground"
+          itemProp="price"
+          content={formatPriceCentsWithoutCurrencySymbolAndComma(currencyCode, price)}
+        >
+          {priceTag}
         </div>
-      </WithTooltip>
+        <div className={classNames("border-border", borderClasses)} />
+        <div className={classNames("absolute top-0 right-px bottom-0 border-accent", borderClasses)} />
+      </div>
       <link itemProp="url" href={url} />
       <div itemProp="availability" className="hidden">
         {`https://schema.org/${isSalesLimited ? "LimitedAvailability" : "InStock"}`}
       </div>
       <div itemProp="priceCurrency" className="hidden">
-        {currencyCode}
+        {currencyCode.toUpperCase()}
       </div>
       {creatorName ? (
         <div itemProp="seller" itemType="https://schema.org/Person" className="hidden">

@@ -3,6 +3,7 @@
 class ProductPresenter::Card
   include Rails.application.routes.url_helpers
   include ProductsHelper
+  include CurrencyHelper
 
   ASSOCIATIONS = [
     :alive_prices, :product_review_stat, :default_offer_code, :skus,
@@ -25,6 +26,8 @@ class ProductPresenter::Card
     default_recurrence = product.default_price_recurrence
     base_price_cents = product.display_price_cents(for_default_duration: true)
     price_cents = compute_discounted_price_cents(base_price_cents)
+    original_price_cents = price_cents < base_price_cents ? base_price_cents : nil
+    buyer_currency_display = request.present? ? buyer_currency_display_props(product:, price_cents:, ip: request.remote_ip) : nil
 
     props = {
       id: product.external_id,
@@ -41,6 +44,8 @@ class ProductPresenter::Card
       is_sales_limited: compute_inventory ? product.max_purchase_count? : false,
       price_cents:,
       currency_code: product.price_currency_type.downcase,
+      **(buyer_currency_display.present? ? { buyer_currency_display: } : {}),
+      **buyer_local_price_props(product:, original_price_cents:, buyer_currency_display:),
       is_pay_what_you_want: product.has_customizable_price_option?,
       url: url_for_product_page(product, request:, recommended_by:, recommender_model_name:, layout: target, affiliate_id:, query:, offer_code:),
       duration_in_months: product.duration_in_months,
@@ -48,9 +53,7 @@ class ProductPresenter::Card
     }
 
     # Include base_price_cents when there's a discount to show original price with strikethrough
-    if price_cents < base_price_cents
-      props[:original_price_cents] = base_price_cents
-    end
+    props[:original_price_cents] = original_price_cents if original_price_cents.present?
 
     if compute_description
       props[:description] = product.plaintext_description.truncate(100)

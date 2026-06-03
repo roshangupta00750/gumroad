@@ -437,6 +437,8 @@ describe SettingsPresenter do
         settings_pages: presenter.pages,
         is_form_disabled: false,
         should_show_country_modal: true,
+        buyer_local_currency_enabled: false,
+        show_buyer_local_currency: false,
         aus_backtax_details: {
           show_au_backtax_prompt: false,
           total_amount_to_au: "$0.00",

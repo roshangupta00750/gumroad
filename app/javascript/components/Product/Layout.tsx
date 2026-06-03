@@ -298,6 +298,11 @@ const CtaBar = ({
           isPayWhatYouWant={isPWYW}
           isSalesLimited={product.is_sales_limited}
           creatorName={product.seller?.name}
+          buyerCurrency={product.buyer_currency}
+          buyerLocalCurrencyRate={product.buyer_local_currency_rate}
+          buyerLocalCurrencySubunitToUnit={product.buyer_local_currency_subunit_to_unit}
+          buyerLocalPriceCents={product.buyer_local_price_cents}
+          buyerLocalOriginalPriceCents={product.buyer_local_original_price_cents}
         />
         <h3 className="hidden flex-1 lg:block">{product.name}</h3>
         {product.ratings != null && product.ratings.count > 0 ? (

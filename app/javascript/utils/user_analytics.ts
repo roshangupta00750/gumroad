@@ -1,7 +1,7 @@
 import * as FacebookPixel from "$app/data/facebook_pixel";
 import * as GoogleAnalytics from "$app/data/google_analytics";
 import * as TikTokPixel from "$app/data/tiktok_pixel";
-import { AnalyticsData } from "$app/parsers/product";
+import { AnalyticsData, BuyerCurrencyDisplay } from "$app/parsers/product";
 
 export type GumroadEvents = keyof typeof ProductEventsTitles;
 
@@ -10,6 +10,7 @@ export const ProductEventsTitles = {
   iwantthis: 'clicked "I want this!" button',
   begin_checkout: "started checkout",
   purchased: "purchased a product",
+  buyer_currency_display_viewed: "viewed buyer currency display",
 };
 
 type ViewedEvent = { action: "viewed"; permalink: string; product_name: string };
@@ -27,6 +28,7 @@ type PurchasedEvent = {
   currency: string;
   quantity: number;
   tax: string;
+  buyer_currency_display?: BuyerCurrencyDisplay;
 };
 
 export type BeginCheckoutEvent = {
@@ -36,7 +38,14 @@ export type BeginCheckoutEvent = {
   products: { permalink: string; name: string; quantity: number; price: number }[];
 };
 
-export type ProductAnalyticsEvent = ViewedEvent | IWantThisEvent | BeginCheckoutEvent | PurchasedEvent;
+export type BuyerCurrencyDisplayViewedEvent = BuyerCurrencyDisplay & { action: "buyer_currency_display_viewed" };
+
+export type ProductAnalyticsEvent =
+  | ViewedEvent
+  | IWantThisEvent
+  | BeginCheckoutEvent
+  | PurchasedEvent
+  | BuyerCurrencyDisplayViewedEvent;
 
 export type AnalyticsConfig = GoogleAnalytics.GoogleAnalyticsConfig &
   FacebookPixel.FacebookPixelConfig &
@@ -59,11 +68,37 @@ export function startTrackingForSeller(id: string, data: AnalyticsData) {
   TikTokPixel.startTrackingForSeller(config);
 }
 
-export function trackProductEvent(id: string, data: ProductAnalyticsEvent) {
-  const config = configs.get(id);
+export function trackProductEvent(id: string | undefined, data: ProductAnalyticsEvent) {
+  const config = id ? configs.get(id) : undefined;
+
+  if (data.action === "buyer_currency_display_viewed") {
+    GoogleAnalytics.trackProductEvent(config, data);
+    return;
+  }
+
   if (!config) return;
 
   GoogleAnalytics.trackProductEvent(config, data);
   if (data.action !== "begin_checkout") FacebookPixel.trackProductEvent(config, data);
   if (data.action !== "begin_checkout") TikTokPixel.trackProductEvent(config, data);
+}
+
+export function trackBuyerCurrencyDisplayView(id: string | undefined, data: BuyerCurrencyDisplay | undefined) {
+  if (!data) return;
+  if (data.variant !== "buyer_local") return;
+
+  let alreadyTracked = false;
+  try {
+    const key = `bcd_view_${data.product_id}`;
+    alreadyTracked = window.sessionStorage.getItem(key) !== null;
+    if (!alreadyTracked) window.sessionStorage.setItem(key, "true");
+  } catch {
+    alreadyTracked = false;
+  }
+  if (alreadyTracked) return;
+
+  trackProductEvent(id, {
+    action: "buyer_currency_display_viewed",
+    ...data,
+  });
 }

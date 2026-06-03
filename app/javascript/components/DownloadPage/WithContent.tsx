@@ -4,7 +4,7 @@ import * as React from "react";
 import typia from "typia";
 
 import { getFolderArchiveDownloadUrl, getProductFileDownloadInfos, saveLastContentPage } from "$app/data/products";
-import { AnalyticsData } from "$app/parsers/product";
+import { AnalyticsData, BuyerCurrencyDisplay } from "$app/parsers/product";
 import { RichContent, RichContentPage } from "$app/parsers/richContent";
 import { assertDefined } from "$app/utils/assert";
 import { CurrencyCode, getIsSingleUnitCurrency } from "$app/utils/currency";
@@ -114,6 +114,7 @@ export type SellerAnalyticsProps = {
     currency: string;
     quantity: number;
     tax: string;
+    buyer_currency_display?: BuyerCurrencyDisplay;
   };
 };
 
@@ -179,6 +180,7 @@ export const WithContent = ({
           currency: purchase_event.currency.toUpperCase(),
           quantity: purchase_event.quantity,
           tax: purchase_event.tax,
+          buyer_currency_display: purchase_event.buyer_currency_display,
         });
       }
     }

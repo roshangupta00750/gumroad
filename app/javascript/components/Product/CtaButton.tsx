@@ -10,6 +10,7 @@ import { NavigationButton } from "$app/components/Button";
 import { getNotForSaleMessage, Product, ProductDiscount, Purchase } from "$app/components/Product";
 import {
   applySelection,
+  buyerLocalContextFor,
   hasMetDiscountConditions,
   PriceSelection,
 } from "$app/components/Product/ConfigurationSelector";
@@ -179,7 +180,7 @@ export const CtaButton = React.forwardRef<HTMLAnchorElement, Props>(
               <small className="block text-center">
                 {formatInstallmentPaymentSchedule(
                   discountedPriceCents,
-                  product.currency_code,
+                  buyerLocalContextFor(product),
                   product.installment_plan.number_of_installments,
                 )}
               </small>

@@ -97,6 +97,8 @@ type PaymentsPageProps = {
   payout_country_name: string | null;
   payout_frequency: PayoutFrequency;
   payout_frequency_daily_supported: boolean;
+  buyer_local_currency_enabled: boolean;
+  show_buyer_local_currency: boolean;
   can_manage_beneficial_owners: boolean;
   errors?: {
     base?: string[];
@@ -126,6 +128,7 @@ export default function PaymentsPage() {
     payouts_paused_by_user: boolean;
     payout_threshold_cents: number | null;
     payout_frequency: PayoutFrequency;
+    show_buyer_local_currency: boolean;
     bank_account: Partial<BankAccount> | null;
     payment_address: string | null;
   }>({
@@ -133,6 +136,7 @@ export default function PaymentsPage() {
     payouts_paused_by_user: props.payouts_paused_by_user,
     payout_threshold_cents: props.payout_threshold_cents,
     payout_frequency: props.payout_frequency,
+    show_buyer_local_currency: props.show_buyer_local_currency,
     bank_account: props.bank_account_details.bank_account,
     payment_address: props.paypal_address,
   });
@@ -197,6 +201,7 @@ export default function PaymentsPage() {
         payouts_paused_by_user: props.payouts_paused_by_user,
         payout_threshold_cents: props.payout_threshold_cents,
         payout_frequency: props.payout_frequency,
+        show_buyer_local_currency: props.show_buyer_local_currency,
         bank_account: props.bank_account_details.bank_account,
         payment_address: props.paypal_address,
       });
@@ -799,6 +804,7 @@ export default function PaymentsPage() {
         payouts_paused_by_user: data.payouts_paused_by_user,
         payout_threshold_cents: data.payout_threshold_cents,
         payout_frequency: data.payout_frequency,
+        show_buyer_local_currency: data.show_buyer_local_currency,
       };
 
       if (selectedPayoutMethod === "bank") {
@@ -1013,6 +1019,24 @@ export default function PaymentsPage() {
             )}
           </section>
         </FormSection>
+
+        {props.buyer_local_currency_enabled ? (
+          <FormSection header={<h2>Product pages</h2>}>
+            <Fieldset>
+              <Switch
+                checked={form.data.show_buyer_local_currency}
+                onChange={(e) => form.setData("show_buyer_local_currency", e.target.checked)}
+                aria-label="Show buyers their local currency on product pages"
+                disabled={props.is_form_disabled}
+                label="Show buyers their local currency on product pages"
+              />
+              <FieldsetDescription>
+                Buyers see an approximate price in their local currency in place of your set price. Checkout still uses
+                USD.
+              </FieldsetDescription>
+            </Fieldset>
+          </FormSection>
+        ) : null}
 
         <FormSection
           header={

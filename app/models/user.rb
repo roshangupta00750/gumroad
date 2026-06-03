@@ -177,6 +177,15 @@ class User < ApplicationRecord
   attr_json_data_accessor :daily_product_creation_limit
   attr_json_data_accessor :tiktok_pixel_id
 
+  def show_buyer_local_currency
+    ActiveModel::Type::Boolean.new.cast(json_data_for_attr("show_buyer_local_currency", default: false))
+  end
+  alias_method :show_buyer_local_currency?, :show_buyer_local_currency
+
+  def show_buyer_local_currency=(value)
+    set_json_data_for_attr("show_buyer_local_currency", ActiveModel::Type::Boolean.new.cast(value))
+  end
+
   attr_blockable :email
   attr_blockable :form_email, object_type: :email
   attr_blockable :email_domain

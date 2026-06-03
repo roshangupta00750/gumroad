@@ -32,6 +32,16 @@ export type Ratings = { count: number; average: number };
 
 export type RatingsWithPercentages = Ratings & { percentages: Tuple<number, 5> };
 
+export type BuyerCurrencyDisplay = {
+  product_id: string;
+  creator_opted_in: boolean;
+  buyer_currency_shown: string;
+  product_currency: CurrencyCode;
+  buyer_local_price_cents: number | null;
+  rate: number | null;
+  variant: "buyer_local" | "default";
+};
+
 export type CardProduct = {
   id: string;
   permalink: string;
@@ -41,6 +51,12 @@ export type CardProduct = {
   price_cents: number;
   original_price_cents?: number;
   currency_code: CurrencyCode;
+  buyer_currency?: string;
+  buyer_local_currency_rate?: number;
+  buyer_local_currency_subunit_to_unit?: number;
+  buyer_local_price_cents?: number;
+  buyer_local_original_price_cents?: number;
+  buyer_currency_display?: BuyerCurrencyDisplay;
   thumbnail_url: string | null;
   native_type: ProductNativeType;
   url: string;

@@ -94,6 +94,15 @@ describe ProductPresenter do
             **ProductPresenter::InstallmentPlanProps.new(product:).props,
             covers: [],
             currency_code: Currency::USD,
+            buyer_currency_display: {
+              product_id: product.external_id,
+              creator_opted_in: false,
+              buyer_currency_shown: "usd",
+              product_currency: "usd",
+              buyer_local_price_cents: nil,
+              rate: nil,
+              variant: "default"
+            },
             custom_view_content_button_text: nil,
             custom_button_text_option: nil,
             description_html: "This is a collection of works spanning 1984 — 1994, while I spent time in a shack in the Andes.",
@@ -233,7 +242,7 @@ describe ProductPresenter do
   end
 
   describe "#edit_props" do
-    let(:request) { instance_double(ActionDispatch::Request, host: "test.gumroad.com", host_with_port: "test.gumroad.com:1234", protocol: "http") }
+    let(:request) { instance_double(ActionDispatch::Request, host: "test.gumroad.com", host_with_port: "test.gumroad.com:1234", protocol: "http", remote_ip: "0.0.0.0") }
     let(:circle_integration) { create(:circle_integration) }
     let(:discord_integration) { create(:discord_integration) }
     let(:product) do
@@ -1006,7 +1015,7 @@ describe ProductPresenter do
   end
 
   describe ".card_for_web" do
-    let(:request) { instance_double(ActionDispatch::Request, host: "test.gumroad.com", host_with_port: "test.gumroad.com:1234", protocol: "http") }
+    let(:request) { instance_double(ActionDispatch::Request, host: "test.gumroad.com", host_with_port: "test.gumroad.com:1234", protocol: "http", remote_ip: "0.0.0.0") }
     let(:product) { create(:product) }
 
     it "returns properties from the card presenter" do
@@ -1154,7 +1163,7 @@ describe ProductPresenter do
       per_row_patterns.each do |pattern, label|
         hits = queries.grep(pattern)
         expect(hits.size).to be <= 1,
-          "Expected at most 1 query matching #{label} (the batched IN preload), got #{hits.size}:\n#{hits.join("\n")}"
+                             "Expected at most 1 query matching #{label} (the batched IN preload), got #{hits.size}:\n#{hits.join("\n")}"
       end
     end
 
@@ -1186,7 +1195,7 @@ describe ProductPresenter do
       per_row_patterns.each do |pattern, label|
         hits = queries.grep(pattern)
         expect(hits).to be_empty,
-          "Expected no per-row queries matching #{label}, got #{hits.size}:\n#{hits.join("\n")}"
+                        "Expected no per-row queries matching #{label}, got #{hits.size}:\n#{hits.join("\n")}"
       end
     end
   end
