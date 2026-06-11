@@ -52,6 +52,8 @@ class ElasticsearchIndexerWorker
       client_params[:ignore] << 404
       EsClient.delete(client_params)
     end
+  rescue ActiveRecord::RecordNotFound
+    # The record was deleted before this job ran; the destroy callback enqueues the document deletion.
   end
 
   def self.columns_to_fields(columns, mapping:)

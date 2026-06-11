@@ -850,7 +850,7 @@ class Installment < ApplicationRecord
   end
 
   def audience_members_count(limit = nil)
-    AudienceMember.filter(seller_id:, params: audience_members_filter_params).limit(limit).count
+    AudienceMember.filter_count(seller:, params: audience_members_filter_params, limit:)
   end
 
   def self.receivable_by_customers_of_product(product:, variant_external_id:)

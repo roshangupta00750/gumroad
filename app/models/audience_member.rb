@@ -1,7 +1,18 @@
 # frozen_string_literal: true
 
 class AudienceMember < ApplicationRecord
+  include AudienceMember::Searchable
+
   VALID_FILTER_TYPES = %w[customer follower affiliate].freeze
+  FILTER_PARAMS = %i[
+    type
+    bought_product_ids bought_variant_ids
+    not_bought_product_ids not_bought_variant_ids
+    paid_more_than_cents paid_less_than_cents
+    created_after created_before
+    bought_from
+    affiliate_product_ids
+  ].freeze
 
   belongs_to :seller, class_name: "User"
   after_initialize :assign_default_details_value
@@ -12,15 +23,7 @@ class AudienceMember < ApplicationRecord
   before_save :assign_derived_columns
 
   def self.filter(seller_id:, params: {}, with_ids: false)
-    params = params.slice(
-      :type,
-      :bought_product_ids, :bought_variant_ids,
-      :not_bought_product_ids, :not_bought_variant_ids,
-      :paid_more_than_cents, :paid_less_than_cents,
-      :created_after, :created_before,
-      :bought_from,
-      :affiliate_product_ids
-    ).compact_blank
+    params = params.slice(*FILTER_PARAMS).compact_blank
 
     if params[:type]
       raise ArgumentError, "Invalid type: #{params[:type]}. Must be one of: #{VALID_FILTER_TYPES.join(', ')}" unless params[:type].in?(VALID_FILTER_TYPES)
@@ -202,6 +205,18 @@ class AudienceMember < ApplicationRecord
     end
 
     relation
+  end
+
+  def self.filter_count(seller:, params: {}, limit: nil)
+    if Feature.active?(:audience_member_elasticsearch_counts, seller)
+      begin
+        return elasticsearch_filter_count(seller_id: seller.id, params:, limit:)
+      rescue Elasticsearch::Transport::Transport::Error, Faraday::ConnectionFailed, Faraday::TimeoutError => e
+        Rails.logger.warn("[AudienceMember.filter_count] Falling back to SQL, Elasticsearch query failed: #{e.class}: #{e.message}")
+      end
+    end
+
+    filter(seller_id: seller.id, params:).limit(limit).count
   end
 
   # Admin method: refreshes all audience members for a seller.

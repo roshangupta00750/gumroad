@@ -166,6 +166,23 @@ describe ElasticsearchIndexerWorker, :elasticsearch_wait_for_refresh do
       end
     end
 
+    context "when the record was deleted before the job runs" do
+      before do
+        @record = @model.create!(name: "Drawing")
+        @record.destroy!
+      end
+
+      it "ignores index and update operations" do
+        expect do
+          described_class.new.perform("index", "class_name" => @model.name, "record_id" => @record.id)
+        end.not_to raise_error
+        expect do
+          described_class.new.perform("update", "class_name" => @model.name, "record_id" => @record.id, "fields" => ["name"])
+        end.not_to raise_error
+        expect(get_document_attributes).to eq(nil)
+      end
+    end
+
     context "when updating by query" do
       before do
         @model.mapping do
