@@ -3,10 +3,10 @@
 class AzerbaijanBankAccount < BankAccount
   BANK_ACCOUNT_TYPE = "AZ"
 
-  BANK_CODE_FORMAT_REGEX = /^\d{6}$/
+  BANK_CODE_FORMAT_REGEX = /\A\d{6}\z/
   private_constant :BANK_CODE_FORMAT_REGEX
 
-  BRANCH_CODE_FORMAT_REGEX = /^\d{6}$/
+  BRANCH_CODE_FORMAT_REGEX = /\A\d{6}\z/
   private_constant :BRANCH_CODE_FORMAT_REGEX
 
   alias_attribute :bank_code, :bank_number

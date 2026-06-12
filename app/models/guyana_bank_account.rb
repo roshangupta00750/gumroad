@@ -3,11 +3,11 @@
 class GuyanaBankAccount < BankAccount
   BANK_ACCOUNT_TYPE = "GY"
 
-  BANK_CODE_FORMAT_REGEX = /^[0-9a-zA-Z]{11}$/
-  BRANCH_CODE_FORMAT_REGEX = /^\d{8}$/
+  BANK_CODE_FORMAT_REGEX = /\A[0-9a-zA-Z]{11}\z/
+  BRANCH_CODE_FORMAT_REGEX = /\A\d{8}\z/
   private_constant :BANK_CODE_FORMAT_REGEX, :BRANCH_CODE_FORMAT_REGEX
 
-  ACCOUNT_NUMBER_FORMAT_REGEX = /^[0-9a-zA-Z]{1,32}$/
+  ACCOUNT_NUMBER_FORMAT_REGEX = /\A[0-9a-zA-Z]{1,32}\z/
   private_constant :ACCOUNT_NUMBER_FORMAT_REGEX
 
   alias_attribute :bank_code, :bank_number

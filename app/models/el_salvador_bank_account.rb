@@ -3,7 +3,7 @@
 class ElSalvadorBankAccount < BankAccount
   BANK_ACCOUNT_TYPE = "SV"
 
-  BANK_CODE_FORMAT_REGEX = /^[a-zA-Z0-9]{8,11}$/
+  BANK_CODE_FORMAT_REGEX = /\A[a-zA-Z0-9]{8,11}\z/
   PLAIN_ACCOUNT_NUMBER_REGEX = /\A[0-9]{10,20}\z/
   IBAN_FORMAT_REGEX = /\ASV[0-9]{2}[A-Z]{4}[0-9]{20}\z/
   private_constant :BANK_CODE_FORMAT_REGEX, :PLAIN_ACCOUNT_NUMBER_REGEX, :IBAN_FORMAT_REGEX

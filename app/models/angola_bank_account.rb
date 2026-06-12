@@ -3,7 +3,7 @@
 class AngolaBankAccount < BankAccount
   BANK_ACCOUNT_TYPE = "AO"
 
-  BANK_CODE_FORMAT_REGEX = /^([0-9a-zA-Z]){8,11}$/
+  BANK_CODE_FORMAT_REGEX = /\A([0-9a-zA-Z]){8,11}\z/
   private_constant :BANK_CODE_FORMAT_REGEX
 
   ACCOUNT_NUMBER_FORMAT_REGEX = /\AAO[0-9]{23}\z/

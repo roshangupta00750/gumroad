@@ -3,8 +3,8 @@
 class GibraltarBankAccount < BankAccount
   BANK_ACCOUNT_TYPE = "GI"
 
-  SORT_CODE_FORMAT_REGEX = /^\d{2}-\d{2}-\d{2}$/
-  ACCOUNT_NUMBER_FORMAT_REGEX = /^\d{8}$/
+  SORT_CODE_FORMAT_REGEX = /\A\d{2}-\d{2}-\d{2}\z/
+  ACCOUNT_NUMBER_FORMAT_REGEX = /\A\d{8}\z/
   private_constant :SORT_CODE_FORMAT_REGEX, :ACCOUNT_NUMBER_FORMAT_REGEX
 
   alias_attribute :sort_code, :bank_number

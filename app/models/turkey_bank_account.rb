@@ -3,7 +3,7 @@
 class TurkeyBankAccount < BankAccount
   BANK_ACCOUNT_TYPE = "TR"
 
-  BANK_CODE_FORMAT_REGEX = /^([a-zA-Z]){4}([a-zA-Z]){2}([0-9a-zA-Z]){2}([0-9a-zA-Z]{3})?$/
+  BANK_CODE_FORMAT_REGEX = /\A([a-zA-Z]){4}([a-zA-Z]){2}([0-9a-zA-Z]){2}([0-9a-zA-Z]{3})?\z/
   private_constant :BANK_CODE_FORMAT_REGEX
 
   alias_attribute :bank_code, :bank_number

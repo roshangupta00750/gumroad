@@ -3,8 +3,8 @@
 class BoliviaBankAccount < BankAccount
   BANK_ACCOUNT_TYPE = "BO"
 
-  BANK_CODE_FORMAT_REGEX = /^\d{1,3}$/
-  ACCOUNT_NUMBER_FORMAT_REGEX = /^\d{10,15}$/
+  BANK_CODE_FORMAT_REGEX = /\A\d{1,3}\z/
+  ACCOUNT_NUMBER_FORMAT_REGEX = /\A\d{10,15}\z/
   private_constant :BANK_CODE_FORMAT_REGEX, :ACCOUNT_NUMBER_FORMAT_REGEX
 
   alias_attribute :bank_code, :bank_number

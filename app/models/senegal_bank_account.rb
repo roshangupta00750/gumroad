@@ -3,7 +3,7 @@
 class SenegalBankAccount < BankAccount
   BANK_ACCOUNT_TYPE = "SN"
 
-  ACCOUNT_NUMBER_FORMAT_REGEX = /^SN([0-9SN]){20,26}$/
+  ACCOUNT_NUMBER_FORMAT_REGEX = /\ASN([0-9SN]){20,26}\z/
   private_constant :ACCOUNT_NUMBER_FORMAT_REGEX
 
   validate :validate_account_number
