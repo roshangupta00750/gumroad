@@ -52,4 +52,19 @@ describe ArmeniaBankAccount do
       expect(build(:armenia_bank_account, account_number: "00001234567890123")).not_to be_valid
     end
   end
+
+  describe "anchoring to the whole value" do
+    it "rejects an otherwise-valid bank code with a trailing newline" do
+      expect(build(:armenia_bank_account, bank_code: "AAAAAMNNXXX\n")).not_to be_valid
+    end
+
+    it "rejects an otherwise-valid account number with a trailing newline" do
+      expect(build(:armenia_bank_account, account_number: "00001234567\n")).not_to be_valid
+    end
+
+    it "rejects a value whose only valid match is on a later line" do
+      expect(build(:armenia_bank_account, bank_code: "invalid\nAAAAAMNNXXX")).not_to be_valid
+      expect(build(:armenia_bank_account, account_number: "invalid\n00001234567")).not_to be_valid
+    end
+  end
 end

@@ -3,10 +3,10 @@
 class MadagascarBankAccount < BankAccount
   BANK_ACCOUNT_TYPE = "MG"
 
-  BANK_CODE_FORMAT_REGEX = /^([a-zA-Z]){4}([a-zA-Z]){2}([0-9a-zA-Z]){2}([0-9a-zA-Z]{3})?$/
+  BANK_CODE_FORMAT_REGEX = /\A([a-zA-Z]){4}MG([0-9a-zA-Z]){2}([0-9a-zA-Z]{3})?\z/
   private_constant :BANK_CODE_FORMAT_REGEX
 
-  ACCOUNT_NUMBER_FORMAT_REGEX = /^MG([0-9]){25}$/
+  ACCOUNT_NUMBER_FORMAT_REGEX = /\AMG([0-9]){25}\z/
   private_constant :ACCOUNT_NUMBER_FORMAT_REGEX
 
   alias_attribute :bank_code, :bank_number

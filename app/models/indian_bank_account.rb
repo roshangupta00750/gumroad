@@ -7,7 +7,7 @@ class IndianBankAccount < BankAccount
   #  • 4 chars to identify bank
   #  • 1 reserved digit, always 0
   #  • 6 chars to identify branch
-  IFSC_FORMAT_REGEX = /^[A-Za-z]{4}0[A-Z0-9a-z]{6}$/
+  IFSC_FORMAT_REGEX = /\A[A-Za-z]{4}0[A-Z0-9a-z]{6}\z/
   private_constant :IFSC_FORMAT_REGEX
 
   alias_attribute :ifsc, :bank_number

@@ -3,9 +3,9 @@
 class JamaicaBankAccount < BankAccount
   BANK_ACCOUNT_TYPE = "JM"
 
-  BANK_CODE_FORMAT_REGEX = /^\d{3}$/
-  BRANCH_CODE_FORMAT_REGEX = /^\d{5}$/
-  ACCOUNT_NUMBER_FORMAT_REGEX = /^\d{1,18}$/
+  BANK_CODE_FORMAT_REGEX = /\A\d{3}\z/
+  BRANCH_CODE_FORMAT_REGEX = /\A\d{5}\z/
+  ACCOUNT_NUMBER_FORMAT_REGEX = /\A\d{1,18}\z/
   private_constant :BANK_CODE_FORMAT_REGEX, :BRANCH_CODE_FORMAT_REGEX, :ACCOUNT_NUMBER_FORMAT_REGEX
 
   alias_attribute :bank_code, :bank_number

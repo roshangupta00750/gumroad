@@ -7,7 +7,7 @@ class AustralianBankAccount < BankAccount
   #  • 2 digits to identify bank
   #  • 1 digit to identify state
   #  • 3 digits to identify branch
-  BSB_NUMBER_FORMAT_REGEX = /^[0-9]{6}$/
+  BSB_NUMBER_FORMAT_REGEX = /\A[0-9]{6}\z/
   private_constant :BSB_NUMBER_FORMAT_REGEX
 
   alias_attribute :bsb_number, :bank_number

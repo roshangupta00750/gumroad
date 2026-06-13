@@ -3,7 +3,7 @@
 class UkBankAccount < BankAccount
   BANK_ACCOUNT_TYPE = "UK"
 
-  SORT_CODE_FORMAT_REGEX = /^\d{2}-\d{2}-\d{2}$/
+  SORT_CODE_FORMAT_REGEX = /\A\d{2}-\d{2}-\d{2}\z/
   private_constant :SORT_CODE_FORMAT_REGEX
 
 

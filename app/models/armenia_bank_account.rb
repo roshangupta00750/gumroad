@@ -3,8 +3,8 @@
 class ArmeniaBankAccount < BankAccount
   BANK_ACCOUNT_TYPE = "AM"
 
-  BANK_CODE_FORMAT_REGEX = /^[0-9A-Za-z]{8,11}$/
-  ACCOUNT_NUMBER_FORMAT_REGEX = /^\d{11,16}$/
+  BANK_CODE_FORMAT_REGEX = /\A[0-9A-Za-z]{8,11}\z/
+  ACCOUNT_NUMBER_FORMAT_REGEX = /\A\d{11,16}\z/
   private_constant :BANK_CODE_FORMAT_REGEX, :ACCOUNT_NUMBER_FORMAT_REGEX
 
   alias_attribute :bank_code, :bank_number

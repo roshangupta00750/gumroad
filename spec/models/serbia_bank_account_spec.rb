@@ -23,7 +23,15 @@ describe SerbiaBankAccount do
     it "returns valid for 11 characters" do
       ba = create(:serbia_bank_account)
       expect(ba).to be_valid
-      expect(ba.routing_number).to eq("TESTSERBXXX")
+      expect(ba.routing_number).to eq("TESTRSBGXXX")
+    end
+  end
+
+  describe "#validate_bank_code" do
+    it "requires the SWIFT/BIC country code to be RS" do
+      expect(build(:serbia_bank_account, bank_code: "TESTRSBGXXX")).to be_valid
+      expect(build(:serbia_bank_account, bank_code: "TESTRSBG")).to be_valid
+      expect(build(:serbia_bank_account, bank_code: "TESTSEBGXXX")).not_to be_valid
     end
   end
 

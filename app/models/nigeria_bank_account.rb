@@ -3,10 +3,10 @@
 class NigeriaBankAccount < BankAccount
   BANK_ACCOUNT_TYPE = "NG"
 
-  BANK_CODE_FORMAT_REGEX = /^([0-9a-zA-Z]){8,11}$/
+  BANK_CODE_FORMAT_REGEX = /\A([0-9a-zA-Z]){8,11}\z/
   private_constant :BANK_CODE_FORMAT_REGEX
 
-  ACCOUNT_NUMBER_FORMAT_REGEX = /^\d{10}$/
+  ACCOUNT_NUMBER_FORMAT_REGEX = /\A\d{10}\z/
   private_constant :ACCOUNT_NUMBER_FORMAT_REGEX
 
   alias_attribute :bank_code, :bank_number

@@ -3,9 +3,9 @@
 class SriLankaBankAccount < BankAccount
   BANK_ACCOUNT_TYPE = "LK"
 
-  BANK_CODE_FORMAT_REGEX = /^[a-z0-9A-Z]{11}$/
-  BRANCH_CODE_FORMAT_REGEX = /^\d{7}$/
-  ACCOUNT_NUMBER_FORMAT_REGEX = /^\d{10,18}$/
+  BANK_CODE_FORMAT_REGEX = /\A[a-z0-9A-Z]{11}\z/
+  BRANCH_CODE_FORMAT_REGEX = /\A\d{7}\z/
+  ACCOUNT_NUMBER_FORMAT_REGEX = /\A\d{10,18}\z/
   private_constant :BANK_CODE_FORMAT_REGEX, :BRANCH_CODE_FORMAT_REGEX, :ACCOUNT_NUMBER_FORMAT_REGEX
 
   alias_attribute :bank_code, :bank_number

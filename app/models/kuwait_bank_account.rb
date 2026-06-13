@@ -3,7 +3,7 @@
 class KuwaitBankAccount < BankAccount
   BANK_ACCOUNT_TYPE = "KW"
 
-  BANK_CODE_FORMAT_REGEX = /^[a-zA-Z0-9]{8,11}$/
+  BANK_CODE_FORMAT_REGEX = /\A[a-zA-Z0-9]{8,11}\z/
   private_constant :BANK_CODE_FORMAT_REGEX
 
   alias_attribute :bank_code, :bank_number

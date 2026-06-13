@@ -3,8 +3,8 @@
 class SaintLuciaBankAccount < BankAccount
   BANK_ACCOUNT_TYPE = "LC"
 
-  BANK_CODE_FORMAT_REGEX = /^[a-zA-Z0-9]{8,11}$/
-  ACCOUNT_NUMBER_FORMAT_REGEX = /^[a-zA-Z0-9]{1,32}$/
+  BANK_CODE_FORMAT_REGEX = /\A[a-zA-Z0-9]{8,11}\z/
+  ACCOUNT_NUMBER_FORMAT_REGEX = /\A[a-zA-Z0-9]{1,32}\z/
   private_constant :BANK_CODE_FORMAT_REGEX, :ACCOUNT_NUMBER_FORMAT_REGEX
 
   alias_attribute :bank_code, :bank_number

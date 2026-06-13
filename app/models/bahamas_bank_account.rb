@@ -3,8 +3,8 @@
 class BahamasBankAccount < BankAccount
   BANK_ACCOUNT_TYPE = "BS"
 
-  BANK_CODE_FORMAT_REGEX = /^[a-z0-9A-Z]{8,11}$/
-  ACCOUNT_NUMBER_FORMAT_REGEX = /^\d{1,10}$/
+  BANK_CODE_FORMAT_REGEX = /\A[a-z0-9A-Z]{8,11}\z/
+  ACCOUNT_NUMBER_FORMAT_REGEX = /\A\d{1,10}\z/
   private_constant :BANK_CODE_FORMAT_REGEX, :ACCOUNT_NUMBER_FORMAT_REGEX
 
   alias_attribute :bank_code, :bank_number

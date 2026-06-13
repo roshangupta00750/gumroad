@@ -42,5 +42,9 @@ describe KenyaBankAccount do
       expect(build(:kenya_bank_account, bank_code: "BARCKEN")).not_to be_valid
       expect(build(:kenya_bank_account, bank_code: "BARCKENXMDRX")).not_to be_valid
     end
+
+    it "requires the SWIFT/BIC country code to be KE" do
+      expect(build(:kenya_bank_account, bank_code: "BARCUSNX")).not_to be_valid
+    end
   end
 end

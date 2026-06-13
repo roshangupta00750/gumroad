@@ -3,8 +3,8 @@
 class PanamaBankAccount < BankAccount
   BANK_ACCOUNT_TYPE = "PA"
 
-  BANK_CODE_FORMAT_REGEX = /^[A-Z]{4}PAPA[A-Z0-9]{3}$/
-  ACCOUNT_NUMBER_FORMAT_REGEX = /^\d{1,18}$/
+  BANK_CODE_FORMAT_REGEX = /\A[A-Z]{4}PAPA[A-Z0-9]{3}\z/
+  ACCOUNT_NUMBER_FORMAT_REGEX = /\A\d{1,18}\z/
   private_constant :BANK_CODE_FORMAT_REGEX, :ACCOUNT_NUMBER_FORMAT_REGEX
 
   alias_attribute :bank_code, :bank_number

@@ -3,7 +3,7 @@
 class BeninBankAccount < BankAccount
   BANK_ACCOUNT_TYPE = "BJ"
 
-  ACCOUNT_NUMBER_FORMAT_REGEX = /^BJ[a-zA-Z0-9]{26}$/
+  ACCOUNT_NUMBER_FORMAT_REGEX = /\ABJ[a-zA-Z0-9]{26}\z/
   private_constant :ACCOUNT_NUMBER_FORMAT_REGEX
 
   validate :validate_account_number

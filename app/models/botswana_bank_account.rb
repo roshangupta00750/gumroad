@@ -3,10 +3,10 @@
 class BotswanaBankAccount < BankAccount
   BANK_ACCOUNT_TYPE = "BW"
 
-  BANK_CODE_FORMAT_REGEX = /^[a-zA-Z0-9]{8,11}\z/
+  BANK_CODE_FORMAT_REGEX = /\A[a-zA-Z0-9]{8,11}\z/
   private_constant :BANK_CODE_FORMAT_REGEX
 
-  ACCOUNT_NUMBER_FORMAT_REGEX = /^[a-zA-Z0-9]{1,16}$/
+  ACCOUNT_NUMBER_FORMAT_REGEX = /\A[a-zA-Z0-9]{1,16}\z/
   private_constant :ACCOUNT_NUMBER_FORMAT_REGEX
 
   alias_attribute :bank_code, :bank_number
