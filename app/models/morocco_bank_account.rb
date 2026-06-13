@@ -3,7 +3,7 @@
 class MoroccoBankAccount < BankAccount
   BANK_ACCOUNT_TYPE = "MA"
 
-  BANK_CODE_FORMAT_REGEX = /\A([a-zA-Z]){4}([a-zA-Z]){2}([0-9a-zA-Z]){2}([0-9a-zA-Z]{3})?\z/
+  BANK_CODE_FORMAT_REGEX = /\A([a-zA-Z]){4}MA([0-9a-zA-Z]){2}([0-9a-zA-Z]{3})?\z/
   private_constant :BANK_CODE_FORMAT_REGEX
 
   ACCOUNT_NUMBER_FORMAT_REGEX = /\AMA([0-9]){20,26}\z/

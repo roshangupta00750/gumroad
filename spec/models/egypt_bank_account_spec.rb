@@ -42,5 +42,9 @@ describe KenyaBankAccount do
       expect(build(:egypt_bank_account, bank_code: "NBEGEGC")).not_to be_valid
       expect(build(:egypt_bank_account, bank_code: "NBEGEGCX3311")).not_to be_valid
     end
+
+    it "requires the SWIFT/BIC country code to be EG" do
+      expect(build(:egypt_bank_account, bank_code: "NBEGUSCX")).not_to be_valid
+    end
   end
 end
