@@ -134,7 +134,8 @@ module ChargeProcessor
   def self.create_payment_intent_or_charge!(merchant_account, chargeable, amount_cents, amount_for_gumroad_cents,
                                             reference, description,
                                             metadata: nil, statement_description: nil, transfer_group: nil,
-                                            off_session: true, setup_future_charges: false, mandate_options: nil)
+                                            off_session: true, setup_future_charges: false, mandate_options: nil,
+                                            presentment: nil)
     charge_processor = get_charge_processor(merchant_account.charge_processor_id)
     chargeable_for_charge_processor = chargeable.get_chargeable_for(merchant_account.charge_processor_id)
 
@@ -149,7 +150,8 @@ module ChargeProcessor
                                                       transfer_group:,
                                                       off_session:,
                                                       setup_future_charges:,
-                                                      mandate_options:)
+                                                      mandate_options:,
+                                                      presentment:)
   end
 
   def self.confirm_payment_intent!(merchant_account, charge_intent_id)
