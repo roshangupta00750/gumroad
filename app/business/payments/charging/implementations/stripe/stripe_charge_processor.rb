@@ -211,12 +211,22 @@ class StripeChargeProcessor
 
   def create_payment_intent_or_charge!(merchant_account, chargeable, amount_cents, amount_for_gumroad_cents, reference,
                                        description, metadata: nil, statement_description: nil,
-                                       transfer_group: nil, off_session: true, setup_future_charges: false, mandate_options: nil)
+                                       transfer_group: nil, off_session: true, setup_future_charges: false, mandate_options: nil,
+                                       presentment: nil)
     should_setup_future_usage = setup_future_charges && !off_session # attempting to set up future usage during an off-session charge will result in an invalid request
 
+    # #5419 When the buyer is charged in their local currency, every amount sent to
+    # Stripe (total, Gumroad's application fee, the seller transfer) is the locked-rate
+    # converted amount, and we attach Stripe's FX quote so Stripe applies that exact
+    # rate. With presentment nil these all collapse to today's USD values.
+    charge_currency = presentment&.currency || "usd"
+    charge_amount_cents = presentment&.amount_cents || amount_cents
+    charge_fee_cents = presentment&.application_fee_cents || amount_for_gumroad_cents
+    charge_transfer_cents = presentment&.transfer_amount_cents || (amount_cents - amount_for_gumroad_cents)
+
     params = {
-      amount: amount_cents,
-      currency: "usd",
+      amount: charge_amount_cents,
+      currency: charge_currency,
       description:,
       metadata: metadata || {
         purchase: reference
@@ -228,6 +238,8 @@ class StripeChargeProcessor
     }
 
     params.merge!(confirm: true) if off_session
+
+    params[:fx_quote] = presentment.fx_quote_id if presentment&.fx_quote_id.present?
 
     params.merge!(mandate_options) if mandate_options.present?
 
@@ -254,7 +266,7 @@ class StripeChargeProcessor
           raise "Merchant Account #{merchant_account.external_id} assigned to user #{merchant_account.user.external_id} "\
               "but has no Charge Processor Merchant ID."
         end
-        params[:application_fee_amount] = amount_for_gumroad_cents
+        params[:application_fee_amount] = charge_fee_cents
         payment_intent = Stripe::PaymentIntent.create(params, { stripe_account: merchant_account.charge_processor_merchant_id })
       elsif merchant_account.user
         if merchant_account.charge_processor_merchant_id.blank?
@@ -263,7 +275,7 @@ class StripeChargeProcessor
         end
         params[:transfer_data] = {
           destination: merchant_account.charge_processor_merchant_id,
-          amount: amount_cents - amount_for_gumroad_cents
+          amount: charge_transfer_cents
         }
         payment_intent = Stripe::PaymentIntent.create(params)
       else

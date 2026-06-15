@@ -118,6 +118,7 @@ class Purchase < ApplicationRecord
   has_one :purchase_wallet_type
   has_one :purchase_offer_code_discount
   has_one :purchasing_power_parity_info, dependent: :destroy
+  has_one :purchase_presentment_amount, dependent: :destroy
   has_one :upsell_purchase, dependent: :destroy
   has_one :purchase_refund_policy, dependent: :destroy
   has_one :order_purchase, dependent: :destroy
@@ -3269,6 +3270,7 @@ class Purchase < ApplicationRecord
         amount_for_gumroad_cents = total_transaction_amount_for_gumroad_cents
         description = "You bought #{link.long_url}!"
         mandate_options = mandate_options_for_stripe
+        presentment = buyer_currency_presentment(chargeable, amount_cents, amount_for_gumroad_cents)
 
         charge_intent = ChargeProcessor.create_payment_intent_or_charge!(self.merchant_account,
                                                                          chargeable,
@@ -3280,7 +3282,8 @@ class Purchase < ApplicationRecord
                                                                          transfer_group: id,
                                                                          off_session:,
                                                                          setup_future_charges:,
-                                                                         mandate_options:)
+                                                                         mandate_options:,
+                                                                         presentment:)
 
         if charge_intent.id.present?
           if processor_payment_intent.present?
@@ -3290,10 +3293,40 @@ class Purchase < ApplicationRecord
           end
         end
         save!
+        store_presentment_amount!(presentment) if presentment && charge_intent.id.present?
         credit_card.update!(json_data: { stripe_payment_intent_id: charge_intent.id }) if credit_card&.requires_mandate? && mandate_options.present?
 
         charge_intent
       end
+    end
+
+    # #5419 When the seller has opted into buyer-currency charging and the buyer's
+    # currency is chargeable, resolve the locked-rate amounts to charge in that currency.
+    # Returns nil (charge stays in USD) for any other case, including non-Stripe processors
+    # — FX quotes are Stripe-only — so the default path is completely unchanged.
+    def buyer_currency_presentment(chargeable, amount_cents, amount_for_gumroad_cents)
+      return unless merchant_account&.charge_processor_id == StripeChargeProcessor.charge_processor_id
+
+      PresentmentCharge.build(
+        product: link,
+        buyer_country_code: chargeable.country,
+        usd_amount_cents: amount_cents,
+        usd_application_fee_cents: amount_for_gumroad_cents,
+        connected_account_id: merchant_account.charge_processor_merchant_id,
+        direct_charge: merchant_account.is_a_stripe_connect_account?,
+      )
+    end
+
+    def store_presentment_amount!(presentment)
+      return if purchase_presentment_amount.present?
+
+      create_purchase_presentment_amount!(
+        presentment_currency: presentment.currency,
+        presentment_amount_cents: presentment.amount_cents,
+        usd_amount_cents: presentment.usd_amount_cents,
+        stripe_fx_quote_id: presentment.fx_quote_id,
+        fx_rate: presentment.rate,
+      )
     end
 
     def with_charge_processor_error_handler
