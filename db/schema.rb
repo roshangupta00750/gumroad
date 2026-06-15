@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_30_000007) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_30_000008) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.string "name", limit: 191, null: false
     t.string "record_type", limit: 191, null: false
@@ -1774,6 +1774,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_30_000007) do
     t.integer "duration_in_months"
     t.index ["offer_code_id"], name: "index_purchase_offer_code_discounts_on_offer_code_id"
     t.index ["purchase_id"], name: "index_purchase_offer_code_discounts_on_purchase_id", unique: true
+  end
+
+  create_table "purchase_presentment_amounts", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+    t.bigint "purchase_id", null: false
+    t.string "presentment_currency", null: false
+    t.integer "presentment_amount_cents", null: false
+    t.integer "usd_amount_cents", null: false
+    t.string "stripe_fx_quote_id"
+    t.decimal "fx_rate", precision: 20, scale: 10
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["purchase_id"], name: "index_purchase_presentment_amounts_on_purchase_id", unique: true
   end
 
   create_table "purchase_refund_policies", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
