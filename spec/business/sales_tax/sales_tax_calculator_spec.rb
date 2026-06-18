@@ -645,7 +645,7 @@ describe SalesTaxCalculator do
           product = create(:product, user: @seller)
 
           expected_sales_tax = SalesTaxCalculation.new(price_cents: 100,
-                                                       tax_cents: 8.1,
+                                                       tax_cents: 8,
                                                        zip_tax_rate: standard_tax_rate)
 
           actual_sales_tax = SalesTaxCalculator.new(product:,
@@ -655,11 +655,21 @@ describe SalesTaxCalculator do
           compare_calculations(expected: expected_sales_tax, actual: actual_sales_tax)
         end
 
+        it "rounds the VAT amount to the nearest cent rather than truncating it" do
+          product = create(:product, user: @seller)
+
+          actual_sales_tax = SalesTaxCalculator.new(product:,
+                                                    price_cents: 70,
+                                                    buyer_location: { country: "CH" }).calculate
+
+          expect(actual_sales_tax.tax_cents).to eq(6)
+        end
+
         it "assesses reduced VAT rate in Switzerland for epublications" do
           product = create(:product, user: @seller, is_epublication: true)
 
           expected_sales_tax = SalesTaxCalculation.new(price_cents: 100,
-                                                       tax_cents: 2.6,
+                                                       tax_cents: 3,
                                                        zip_tax_rate: epublication_tax_rate)
 
           actual_sales_tax = SalesTaxCalculator.new(product:,
@@ -1435,7 +1445,7 @@ describe SalesTaxCalculator do
           product = create(:product, user: @seller)
 
           expected_sales_tax = SalesTaxCalculation.new(price_cents: 100,
-                                                       tax_cents: 7.5,
+                                                       tax_cents: 8,
                                                        zip_tax_rate: standard_tax_rate)
 
           actual_sales_tax = SalesTaxCalculator.new(product:,
