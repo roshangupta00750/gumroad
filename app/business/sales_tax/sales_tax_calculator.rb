@@ -41,7 +41,7 @@ class SalesTaxCalculator
     return SalesTaxCalculation.zero_tax(price_cents) if tax_rate.nil?
     return SalesTaxCalculation.zero_tax(price_cents) unless tax_eligible?
 
-    tax_amount_cents = price_cents * tax_rate.combined_rate
+    tax_amount_cents = (price_cents * tax_rate.combined_rate).round
     SalesTaxCalculation.new(price_cents:,
                             tax_cents: tax_amount_cents,
                             zip_tax_rate: tax_rate,
